@@ -11,6 +11,8 @@ const todos = [{
 }, {
   _id: new ObjectID(),
   text: 'Second test todo',
+  completed: true,
+  completedAt: 1234,
 }];
 
 beforeEach((done) => {
@@ -128,7 +130,7 @@ describe('DELETE /todos/:id', () => {
 
   it('should return 404 if todo not found', (done) => {
     request(app)
-      .delete(`todos/${new ObjectID().toHexString()}`)
+      .delete(`/todos/${new ObjectID().toHexString()}`)
       .expect(404)
       .expect((res) => {
         expect(res.body.todo).toNotExist();
@@ -138,8 +140,52 @@ describe('DELETE /todos/:id', () => {
 
   it('should return 404 if object id is invalid', (done) => {
     request(app)
-      .delete('todos/123')
+      .delete('/todos/123')
       .expect(404)
+      .end(done);
+  });
+});
+
+describe('PATCH /todos/:id', () => {
+  it('should update todo', (done) => {
+    let id = todos[0]._id.toHexString();
+    let text = 'Updated Test Text';
+
+    request(app)
+      .patch(`/todos/${id}`)
+      .send({
+        text,
+        completed: true,
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo).toInclude({
+          text,
+          completed: true,
+        });
+        expect(res.body.todo.completedAt).toBeA('number');
+      })
+      .end(done);
+  });
+
+  it('should clear completedAt when todo is not completed', (done) => {
+    let id = todos[1]._id.toHexString();
+    let text = 'Updated Test Text';
+
+    request(app)
+      .patch(`/todos/${id}`)
+      .send({
+        text,
+        completed: false,
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo).toInclude({
+          text,
+          completed: false,
+        });
+        expect(res.body.todo.completedAt).toNotExist();
+      })
       .end(done);
   });
 });
